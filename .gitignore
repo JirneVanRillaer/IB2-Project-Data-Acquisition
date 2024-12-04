@@ -1,0 +1,24 @@
+/**
+!/.gitignore
+!/*.md
+
+# ESP8266 firmware
+!/ESP_firmware/
+!/ESP_firmware/*.ino
+!/ESP_firmware/*.c
+!/ESP_firmware/*.cpp
+!/ESP_firmware/*.h
+!/ESP_firmware/*.hpp
+
+# STM32 firmware
+!/STM_firmware/
+!/STM_firmware/.cproject
+!/STM_firmware/.mxproject
+!STM_firmware/.project
+!/STM_firmware/*.ioc
+!/STM_firmware/*.ld
+!/STM_firmware/Drivers/
+!/STM_firmware/Drivers/**
+!/STM_firmware/Core/
+!/STM_firmware/Core/**
+
