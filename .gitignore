@@ -22,3 +22,7 @@
 !/STM_firmware/Core/
 !/STM_firmware/Core/**
 
+# Schematics
+!/schematics/
+!/schematics/*.pdf
+!/schematics/*.svg
