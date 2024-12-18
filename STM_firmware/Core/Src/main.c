@@ -473,7 +473,7 @@ int main(void)
 	uint32_t bmp_raw_pressure, bmp_raw_temperature;
 	double bmp_comp_temperature;
 
-	if (unlikely(HAL_ADC_PollForConversion(&hadc1, 50)) != HAL_OK) {
+	if (unlikely(HAL_ADC_PollForConversion(&hadc1, 50) != HAL_OK)) {
 		puts("WARN: Failed to read ADC, sample will be skipped\r");
 		continue;
 	}
