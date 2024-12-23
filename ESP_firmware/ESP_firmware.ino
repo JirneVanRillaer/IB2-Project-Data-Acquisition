@@ -179,7 +179,7 @@ void slc_init(void) {
 float calculatePressureRMS(uint32_t* samples, int length) {
   float sum = 0;
   for (int i = 0; i < length; i++) {
-    int32_t sampleRaw = convert(samples[i]);
+    int32_t sampleRaw = convert(samples[i]);  // Convert back to an 18-bit signed number
     float pressure = sampleRaw / 131071.0f;   // 131071 (max value of 18-bit signed number) ~ 1Pa
     sum += pressure * pressure;
   }
