@@ -248,8 +248,8 @@ static HAL_StatusTypeDef BMP_ReadData(uint32_t* raw_temp, uint32_t* raw_press) {
 	if (unlikely(ret != HAL_OK))
 		return ret;
 
-	*raw_temp = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16);
-	*raw_press = buffer[3] | (buffer[4] << 8) | (buffer[5] << 16);
+	*raw_press = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16);
+	*raw_temp = buffer[3] | (buffer[4] << 8) | (buffer[5] << 16);
 
 	return HAL_OK;
 }
