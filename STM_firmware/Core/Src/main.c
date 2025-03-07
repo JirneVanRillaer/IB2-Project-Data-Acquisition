@@ -520,7 +520,7 @@ int main(void)
 	puts("Sending sample to ESP\r");
 	HAL_UART_Transmit(&huart1, (void *)&sample, sizeof(datapacket_t), HAL_MAX_DELAY);
 
-	HAL_Delay(900);
+	HAL_Delay(10000-100);
   }
   /* USER CODE END 3 */
 }
