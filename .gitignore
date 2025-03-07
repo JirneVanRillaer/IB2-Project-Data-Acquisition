@@ -9,6 +9,7 @@
 !/ESP_firmware/*.cpp
 !/ESP_firmware/*.h
 !/ESP_firmware/*.hpp
+!/ESP_firmware/*.py
 
 # STM32 firmware
 !/STM_firmware/

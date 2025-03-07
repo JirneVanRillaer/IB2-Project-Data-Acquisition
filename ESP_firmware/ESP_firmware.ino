@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <EEPROM.h>
 
 /////////////////////////////////////////////////////////////////////////////
 ////                                 I2S                                 ////
@@ -253,15 +254,37 @@ static uint8_t calcCRC(uint8_t* buffer, size_t size) {
 ////                           MQTT & WIFI                               ////
 /////////////////////////////////////////////////////////////////////////////
 
-const char* ssid = "American Airlines";
-const char* password = "henkenwillem";
+#define EEPROM_SIZE 4096
 
-const char* mqtt_server = "192.168.37.8";
-const int mqtt_port = 1883;
-const char* mqtt_topic = "sensor";
+typedef struct __attribute__((packed)) {
+  char ssid[35];
+  char psk[35];
+  char mqtt_server[35];
+  uint16_t mqtt_port;
+  char mqtt_topic[15];
+  char classroom[5];
+  uint8_t crc;
+} config_t;
+config_t cfg;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+
+void read_config(void) {
+  Serial.println(F("Reading node configuration..."));
+  EEPROM.begin(EEPROM_SIZE);
+
+  EEPROM.get(0, cfg);
+  if (calcCRC((uint8_t*)&cfg, sizeof(config_t)-1) != cfg.crc) {
+    Serial.println(F("ERROR: CRC error in configuration data"));
+    while (1) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(100);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+    }
+  }
+}
 
 /**
  *  @brief Try to connect to network
@@ -271,8 +294,8 @@ PubSubClient client(espClient);
 void setup_wifi(void) {
   bool led = false;
 
-  Serial.printf("Connecting to '%s'...\n\r", ssid);
-  WiFi.begin(ssid, password);
+  Serial.printf("Connecting to '%s'...\n\r", cfg.ssid);
+  WiFi.begin(cfg.ssid, cfg.psk);
 
   while (WiFi.status() != WL_CONNECTED) {
     digitalWrite(LED_BUILTIN, led = !led);
@@ -301,7 +324,7 @@ void connect_mqtt() {
   }
 
   while (!client.connected()) {
-    if (client.connect("ESP32Client")) {
+    if (client.connect(("node-" + String(cfg.classroom)).c_str())) {
       Serial.println(F("MQTT connected"));
     } else {
       Serial.print(F("MQTT connection failed failed, rc = "));
@@ -346,8 +369,9 @@ void setup(void) {
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);  // Note: on-board LED on NodeMCU is active low
+  read_config();
   setup_wifi();
-  client.setServer(mqtt_server, mqtt_port);
+  client.setServer(cfg.mqtt_server, cfg.mqtt_port);
 }
 
 void loop(void) {
@@ -386,7 +410,7 @@ void loop(void) {
         if (crc == as_packet->crc) {
           StaticJsonDocument<200> jsonDoc;
 
-          jsonDoc["classID"] = "E113";
+          jsonDoc["classID"] = cfg.classroom;
           jsonDoc["temperature"] = as_packet->temperature;
           jsonDoc["humidity"] = as_packet->humidity;
           jsonDoc["pressure"] = as_packet->pressure;
@@ -398,7 +422,7 @@ void loop(void) {
           char payload[200];
           serializeJson(jsonDoc, payload);
 
-          if (client.publish(mqtt_topic, payload)) {
+          if (client.publish(cfg.mqtt_topic, payload)) {
             Serial.println(F("Successfully sent payload to MQTT"));
           } else {
             Serial.println(F("Failed to send payload to MQTT"));
