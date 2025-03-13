@@ -47,12 +47,13 @@ typedef struct {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+const unsigned char MICS_ADDRESS = 0x70;
+const unsigned char HIH_ADDRESS  = 0x27;
+unsigned char BMP_ADDRESS        = 0x76;	// Either 0x76 or 0x77 (will try both)
+
+
 #define PACKET_SOF 0x55
 #define PACKET_EOF 0xff
-
-#define BMP_ADDRESS 0x76
-#define MICS_ADDRESS 0x70
-#define HIH_ADDRESS 0x27
 
 #define MICS_CMD_GET_STATUS 0x0C
 #define MICS_VOC_VALUE 0
@@ -90,6 +91,12 @@ static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
+/**
+ * @brief Computes CRC
+ * @param buffer Pointer to data on which CRC must be computed
+ * @param size Size of the data
+ * @retval Computed CRC
+ */
 static uint8_t calcCRC(uint8_t* buffer, size_t size) {
 	uint16_t sum = 0;
 	for (uint8_t i = 0; i < size; i++)
@@ -102,11 +109,20 @@ static uint8_t calcCRC(uint8_t* buffer, size_t size) {
 	return crc;
 }
 
-// BMP390
+/**
+ * @brief Writes data to BMP's registers
+ * @param reg Which register to write to
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static inline HAL_StatusTypeDef BMP_WriteRegister(uint8_t reg, uint8_t data) {
 	return HAL_I2C_Mem_Write(&hi2c1, BMP_ADDRESS << 1, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, 1000);
 }
 
+/**
+ * @brief Configures the BMP
+ * @param None
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static inline HAL_StatusTypeDef BMP_ConfigSensor(void) {
 	HAL_StatusTypeDef ret;
 
@@ -137,6 +153,11 @@ static inline HAL_StatusTypeDef BMP_ConfigSensor(void) {
 	return ret;
 }
 
+/**
+ * @brief Reads calibration data from BMP
+ * @param calib Pointer to where BMP's calibration data will be stored
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static inline HAL_StatusTypeDef BMP_GetCalibrationData(bmp_calib_t* calib) {
 	uint8_t buf[21];
 	HAL_StatusTypeDef ret;
@@ -190,6 +211,12 @@ static inline HAL_StatusTypeDef BMP_GetCalibrationData(bmp_calib_t* calib) {
 	return HAL_OK;
 }
 
+/**
+ * @brief Compansates raw temperature from BMP
+ * @param comp_temp Value of the compensated temperature
+ * @param calib Pointer to BMP's calibration data
+ * @retval Compensated temperature
+ */
 static double BMP_CompensateTemperature(uint32_t uncomp_temp, bmp_calib_t* calib) {
 	double partial_data1;
 	double partial_data2;
@@ -201,6 +228,13 @@ static double BMP_CompensateTemperature(uint32_t uncomp_temp, bmp_calib_t* calib
 	return t_lin;
 }
 
+/**
+ * @brief Compansates raw pressure from BMP
+ * @param uncomp_press Value of the uncompensated pressure
+ * @param comp_temp Value of the compensated temperature
+ * @param calib Pointer to BMP's calibration data
+ * @retval Compensated pressure
+ */
 static double BMP_CompensatePressure(uint32_t uncomp_press, double comp_temp, bmp_calib_t* calib) {
 	// Variable to store the compensated pressure
 	double comp_press;
@@ -231,6 +265,12 @@ static double BMP_CompensatePressure(uint32_t uncomp_press, double comp_temp, bm
 	return comp_press;
 }
 
+/**
+ * @brief Reads data from BMP
+ * @param raw_temp Pointer to u32 in which raw temperature will be stored
+ * @param raw_press Pointer to u32 in which raw pressure will be stored
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static HAL_StatusTypeDef BMP_ReadData(uint32_t* raw_temp, uint32_t* raw_press) {
 	uint8_t buffer[6];
 	HAL_StatusTypeDef ret;
@@ -254,7 +294,11 @@ static HAL_StatusTypeDef BMP_ReadData(uint32_t* raw_temp, uint32_t* raw_press) {
 	return HAL_OK;
 }
 
-// HIH7000
+/**
+ * @brief Starts a new measurement on the HIH
+ * @param None
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static inline void HIH_SendWakeup(void) {
 	HAL_StatusTypeDef ret;
 
@@ -267,6 +311,12 @@ static inline void HIH_SendWakeup(void) {
 	}
 }
 
+/**
+ * @brief Reads data from HIH
+ * @param hum Pointer to float in which humidity will be stored
+ * @param temp Pointer to float in which temperature will be stored
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static HAL_StatusTypeDef HIH_ReadData(float* hum, float* temp) {
 	uint8_t buffer[4];
 	HAL_StatusTypeDef ret;
@@ -304,6 +354,11 @@ static HAL_StatusTypeDef HIH_ReadData(float* hum, float* temp) {
 	return HAL_OK;
 }
 
+/**
+ * @brief Sends a command to the MICS
+ * @param cmd Command to send
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static inline HAL_StatusTypeDef MICS_SendCmd(uint8_t cmd) {
 	uint8_t cmd_frame[6] = { cmd, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
@@ -311,6 +366,12 @@ static inline HAL_StatusTypeDef MICS_SendCmd(uint8_t cmd) {
 	return HAL_I2C_Master_Transmit(&hi2c1, MICS_ADDRESS << 1, cmd_frame, 6, 1000);
 }
 
+/**
+ * @brief Reads data from MICS
+ * @param voc Pointer to float in which VOC-level will be stored
+ * @param co2 Pointer to float in which CO2-level will be stored
+ * @retval HAL_OK on success, HAL_ERROR otherwise
+ */
 static HAL_StatusTypeDef MICS_ReadData(float* voc, float* co2) {
 	uint8_t buffer[7];
 	HAL_StatusTypeDef ret;
@@ -329,6 +390,47 @@ static HAL_StatusTypeDef MICS_ReadData(float* voc, float* co2) {
 	*co2 = ((float)buffer[MICS_CO2_VALUE] - 13.0f) * (1600.0f / 229.0f) + 400.0f;
 
 	return HAL_OK;
+}
+
+/**
+ * @brief Checks if all I2C-sensors are reachable
+ * @param None
+ * @retval Zero if all sensors were reachable, -1 otherwise
+ */
+static int8_t CheckAllSensors(void) {
+	int8_t error = 0;
+
+	// HIH7120: temperature and rel. humidity
+	if ( HAL_I2C_IsDeviceReady(&hi2c1, HIH_ADDRESS << 1, 1, 1000) != HAL_OK ) {
+		puts("HIH7120 - FAILED\r");
+		error = -1;
+	} else {
+		puts("HIH7120 - OK\r");
+	}
+
+	// MiCS-VZ-89TE: CO2 and VOC level
+	if ( HAL_I2C_IsDeviceReady(&hi2c1, MICS_ADDRESS << 1, 1, 1000) != HAL_OK ) {
+		puts("MiCS-VZ-89TE - FAILED\r");
+			error = -1;
+	} else {
+		puts("MiCS-VZ-89TE - OK\r");
+	}
+
+	// BMP390: pressure and temperature
+	int8_t bmp_ok = 0;
+	if ( HAL_I2C_IsDeviceReady(&hi2c1, BMP_ADDRESS << 1, 1, 1000) != HAL_OK ) {
+		// Address was not 0x76, try again with 0x77
+		if ( HAL_I2C_IsDeviceReady(&hi2c1, ++BMP_ADDRESS << 1, 1, 1000) != HAL_OK )
+			bmp_ok = -1;
+	}
+	if (bmp_ok == 0) {
+		puts("BMP390 - OK\r");
+	} else {
+		puts("BMP390 - FAILED\r");
+		error = -1;
+	}
+
+	return error;
 }
 
 /* USER CODE END PFP */
@@ -389,34 +491,7 @@ int main(void)
   puts("STM32 starting...\r");
   HAL_Delay(2000); // Give all sensors and ESP time to start up
   puts("Checking if all I2C-sensors are reachable...\r");
-
-  uint8_t error = 0;
-
-  // HIH7120: temperature and rel. humidity
-  if ( HAL_I2C_IsDeviceReady(&hi2c1, HIH_ADDRESS << 1, 1, 1000) != HAL_OK ) {
-	  puts("HIH7120 - FAILED\r");
-	  error = -1;
-  } else {
-	  puts("HIH7120 - OK\r");
-  }
-
-  // BMP390: pressure and temperature
-  if ( HAL_I2C_IsDeviceReady(&hi2c1, BMP_ADDRESS << 1, 1, 1000) != HAL_OK ) {
-	  puts("BMP390 - FAILED\r");
-  	  error = -1;
-  } else {
-  	  puts("BMP390 - OK\r");
-  }
-
-  // MiCS-VZ-89TE: CO2 and VOC level
-  if ( HAL_I2C_IsDeviceReady(&hi2c1, MICS_ADDRESS << 1, 1, 1000) != HAL_OK ) {
-	  puts("MiCS-VZ-89TE - FAILED\r");
-		  error = -1;
-  } else {
-	  puts("MiCS-VZ-89TE - OK\r");
-  }
-
-  if (error) {
+  if (unlikely( CheckAllSensors() < 0 )) {
 	  // Critical error - print in (bright) red
 	  puts("\x1B[91mERROR: Not all I2C-sensors are reachable, check wiring!\x1B[0m\r");
 	  Error_Handler();
