@@ -6,7 +6,6 @@ from struct import pack
 import esptool
 import tempfile
 
-PORT = "COM8"
 BAUDRATE = 115200
 EEPROM_ADDR = 0x3FB000  # For default (Arduino core) partition sheme
 EEPROM_SIZE = 4096      # 4KB EEPROM
@@ -39,9 +38,9 @@ def create_image(args:Namespace) -> bytes:
     image += bytes([0xff] * (EEPROM_SIZE - len(image))) # Pad with 0xff until EEPROM_SIZE is reached
     return image
 
-def esp_upload(image_path:str) -> None:
+def esp_upload(image_path:str, port:int) -> None:
     args = [
-        "--port", PORT,
+        "--port", port,
         "--baud", str(BAUDRATE),
         "write_flash",
         hex(EEPROM_ADDR), image_path
@@ -75,7 +74,7 @@ def main() -> None:
         # Upload to ESP
         print('Starting uploader...')
         try:
-            esp_upload(fp.name)
+            esp_upload(fp.name, args.esp_port)
         except esptool.util.FatalError as ex:
             print('Failed to upload data to ESP:', ex)
         else:
