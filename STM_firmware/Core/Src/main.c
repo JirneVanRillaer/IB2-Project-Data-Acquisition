@@ -570,13 +570,13 @@ int main(void)
 	bmp_comp_temperature = BMP_CompensateTemperature(bmp_raw_temperature, &bmp_calib_data);
 	pressure = (float)BMP_CompensatePressure(bmp_raw_pressure, bmp_comp_temperature, &bmp_calib_data);
 
-	printf("Temp BMP: %ld\n\r", (long)bmp_comp_temperature);
-	printf("Temp HIH: %ld\n\r", (long)temperature);
-	printf("Pressure: %ld\n\r", (long)pressure);
-	printf("Humidity: %ld\n\r", (long)humidity);
-	printf("CO2: %ld\n\r", (long)co2);
-	printf("VOC: %ld\n\r", (long)voc);
-	printf("Lux: %ld\n\r", (long)lux);
+	printf("Temp BMP: %lf\n\r", bmp_comp_temperature);
+	printf("Temp HIH: %f\n\r", temperature);
+	printf("Pressure: %f\n\r", pressure);
+	printf("Humidity: %f\n\r", humidity);
+	printf("CO2: %f\n\r", co2);
+	printf("VOC: %f\n\r", voc);
+	printf("Lux: %f\n\r", lux);
 
 	// Get average temperature
 	//temperature += (float)bmp_comp_temperature;
