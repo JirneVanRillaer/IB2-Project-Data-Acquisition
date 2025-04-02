@@ -75,8 +75,8 @@ ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
 
-UART_HandleTypeDef huart1; // ESP
-UART_HandleTypeDef huart2; // Debug
+UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
