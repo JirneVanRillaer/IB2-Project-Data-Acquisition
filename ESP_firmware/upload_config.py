@@ -3,8 +3,10 @@ from os import environ
 from sys import exit
 from argparse import ArgumentParser, Namespace
 from struct import pack
+from typing import Dict, List
 import esptool
 import tempfile
+import json
 
 BAUDRATE = 115200
 EEPROM_ADDR = 0x3FB000  # For default (Arduino core) partition sheme
@@ -17,7 +19,7 @@ def calcCRC(data:bytes) -> int:
     crc = 0xff - crc
     return crc
 
-def create_image(args:Namespace) -> bytes:
+def create_image(args:Namespace, cal_data: Dict[str,List[float]]) -> bytes:
     print('using SSID =', args.ssid)
     print(f'using MQTT = {args.mqtt_server}:{args.mqtt_port}')
 
@@ -28,11 +30,12 @@ def create_image(args:Namespace) -> bytes:
     MQTT_port: u16
     MQTT_topic: char[15]
     Classroom: char[5]
+    Temp Calibration Parameters: float[3]
     CRC: u8
     """
 
-    image = pack('<35s35s35sH15s5s', args.ssid.encode(), args.psk.encode(), args.mqtt_server.encode(), 
-        args.mqtt_port, args.mqtt_topic.encode(), args.classroom.encode())
+    image = pack('<35s35s35sH15s5s3f', args.ssid.encode(), args.psk.encode(), args.mqtt_server.encode(), 
+        args.mqtt_port, args.mqtt_topic.encode(), args.classroom.encode(), *cal_data['temperature'])
     crc = calcCRC(image)
     image += crc.to_bytes(1)    # Append CRC-byte
     image += bytes([0xff] * (EEPROM_SIZE - len(image))) # Pad with 0xff until EEPROM_SIZE is reached
@@ -64,9 +67,20 @@ def main() -> None:
     argp.add_argument('--mqtt-topic', type=str, required=False, default=environ['MQTT_TOPIC'], help='MQTT server\'s topic')
     args = argp.parse_args()
 
+    # Get calibration parameters
+    print('Reading calibration data...')
+    with open('calibration_data.json', 'r') as f:
+        cal_data = json.load(f)
+    
+    if args.classroom in cal_data:
+        cal_data = cal_data[args.classroom]
+    else:
+        print('WARNING: Calibration data for this classroom not found. Mock data will be used.')
+        cal_data = cal_data['E112']
+
     # Create image
     print('Creating EEPROM image...')
-    image = create_image(args)
+    image = create_image(args, cal_data)
     with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
         fp.write(image)
         fp.close()

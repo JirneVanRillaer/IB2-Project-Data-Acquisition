@@ -263,6 +263,7 @@ typedef struct __attribute__((packed)) {
   uint16_t mqtt_port;
   char mqtt_topic[15];
   char classroom[5];
+  float temp_cal[3];
   uint8_t crc;
 } config_t;
 config_t cfg;
@@ -295,6 +296,7 @@ void setup_wifi(void) {
   bool led = false;
 
   Serial.printf("Connecting to '%s'...\n\r", cfg.ssid);
+  WiFi.setHostname(cfg.classroom);
   WiFi.begin(cfg.ssid, cfg.psk);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -356,6 +358,18 @@ void connect_mqtt() {
   digitalWrite(LED_BUILTIN, LOW);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+////                             Calibration                             ////
+/////////////////////////////////////////////////////////////////////////////
+
+inline float comp_temp(float x) {
+  return cfg.temp_cal[0] * x * x + cfg.temp_cal[1] * x + cfg.temp_cal[2];
+}
+
+
+
+
+
 void setup(void) {
   Serial.begin(115200);  // RX <- STM32, TX -> debug
   while (!Serial);
@@ -411,7 +425,7 @@ void loop(void) {
           StaticJsonDocument<200> jsonDoc;
 
           jsonDoc["classID"] = cfg.classroom;
-          jsonDoc["temperature"] = as_packet->temperature;
+          jsonDoc["temperature"] = comp_temp( as_packet->temperature );
           jsonDoc["humidity"] = as_packet->humidity;
           jsonDoc["pressure"] = as_packet->pressure;
           jsonDoc["co2"] = as_packet->co2;

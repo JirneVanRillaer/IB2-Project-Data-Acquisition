@@ -411,7 +411,7 @@ static int8_t CheckAllSensors(void) {
 	// MiCS-VZ-89TE: CO2 and VOC level
 	if ( HAL_I2C_IsDeviceReady(&hi2c1, MICS_ADDRESS << 1, 1, 1000) != HAL_OK ) {
 		puts("MiCS-VZ-89TE - FAILED\r");
-			error = -1;
+		error = -1;
 	} else {
 		puts("MiCS-VZ-89TE - OK\r");
 	}

@@ -10,6 +10,7 @@
 !/ESP_firmware/*.h
 !/ESP_firmware/*.hpp
 !/ESP_firmware/*.py
+!/ESP_firmware/*.json
 
 # STM32 firmware
 !/STM_firmware/

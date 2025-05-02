@@ -1,0 +1,43 @@
+{
+    "E112": {
+        "temperature": [0.0038, 0.8702, 0.9474],
+        "humidity": [],
+        "audio": []
+    },
+
+    "E114": {
+        "temperature": [0.0043, 0.8333, 1.4581],
+        "humidity": [],
+        "audio": []
+    },
+
+    "E117": {
+        "temperature": [0.0059, 0.7979, 1.4954],
+        "humidity": [],
+        "audio": []
+    },
+
+    "E111": {
+        "temperature": [0.0048, 0.8227, 1.4685],
+        "humidity": [],
+        "audio": []
+    },
+
+    "E103": {
+        "temperature": [0.0057, 0.8742, 1.0574],
+        "humidity": [],
+        "audio": []
+    },
+
+    "E110": {
+        "temperature": [0.0058, 0.8322, 0.0521],
+        "humidity": [],
+        "audio": []
+    },
+
+    "E119": {
+        "temperature": [0.0053, 0.8626, -0.2732],
+        "humidity": [],
+        "audio": []
+    }
+}
